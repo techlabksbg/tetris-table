@@ -23,16 +23,28 @@ class Letters:
             if x%2==1:
                 y=14-y
             self.np[x*15+y] = color
+
+    def invertPixel(self,x,y):
+        if (x>=0 and x<=9 and y>=0 and y<=14):
+            x=9-x
+            if x%2==1:
+                y=14-y
+            c=self.np[x*15+y]
+            self.np[x*15+y] = (255-c[0], 255-c[1], 255-c[2])
         
     def paintChar(self, x, y, char, color, bgColor=None):
         for j in range(0,18):
             a = x+j%3
             b = y+5-j//3
             if self.letters[char] & (1 << j) !=0:
-                self.setPixel(a,b,color)
+                if color=="inv":
+                    self.invertPixel(a,b)
+                else:
+                    self.setPixel(a,b,color)
             else:
                 if bgColor!=None:
                     self.setPixel(a,b,bgColor)
+                        
         if bgColor!=None:
             for i in range(0,6):
                 self.setPixel(x+3,y+i,bgColor)
