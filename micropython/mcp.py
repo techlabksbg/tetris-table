@@ -1,11 +1,11 @@
 import machine
 import time
-from machine import I2C
+from machine import SoftI2C
 
 class MCP:
     def __init__(self,address=0x26, np=None):
         self.address = address
-        self.i2c=I2C(sda=machine.Pin(23), scl=machine.Pin(22))
+        self.i2c=SoftI2C(sda=machine.Pin(23), scl=machine.Pin(22))
         self.rega = bytearray(1)
         self.rega[0]=0;
         self.regb = bytearray(1)
