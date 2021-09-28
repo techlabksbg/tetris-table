@@ -1,12 +1,8 @@
-import machine
-import neopixel
-import helper
 import letters
-helper = helper.Helper()
-
 
 import random
 import time   # time.sleep_ms() und time.ticks_ms()
+
 
 
 # Hack to get ticks_ms() method in Tigerjython working
@@ -22,199 +18,218 @@ if not hasattr(time, 'ticks_ms'):
 # END of Hack
 
 
-colors = [(255,0,0), (0,255,0), (0,0,255), (255,255,0), (255,0,255), (0,255,255),(255,255,255)]
-
-bricks = list(map(lambda x:list(map(lambda y: [y%4,y//4],x)), [(0,1,2,3),(0,1,2,5), (0,1,4,5), (0,1,5,6), (4,5,1,2), (0,1,2,6), (4,0,1,2)]))
-
-led = 0
-num = 20
-h = 1
-dh=1
-
-feld = [[-1 for i in range(0,15)] for j in range(0,10)]
-
-
-import letters
-
-ledcycle=0
-def ledcyclefun():
-    global helper
-    global ledcycle
-    helper.setLeds(1 << ledcycle)
-    ledcycle=(ledcycle+1)%8
-
-lt = letters.Letters(helper)
-#lt.animateString(4,"TETRIS TABLE",(100,255,100), 100, callback=ledcyclefun)
-
-
-def rotate(brick, angle=1):
-    res = [[0,0] for i in range(0,4)]
-    xmin = 10
-    ymin = 10
-    for i in range(0,4):
-        res[i][0] = brick[i][1]*angle
-        res[i][1] = -brick[i][0]*angle
-        if (res[i][0]<xmin):
-            xmin=res[i][0]
-        if (res[i][1]<ymin):
-            ymin = res[i][1]
-    for i in range(0,4):
-        res[i][0]-=xmin
-        res[i][1]-=ymin    
-    return res
-
-
-def showBrick(brick, col, x, y):
-    global colors,np
-    for i in range(0,4):
-        a=x+brick[i][0]
-        b=y+brick[i][1]
-        if (a<10 and b<15):
-            helper.setPixel(a,b,colors[col])
-    helper.np.write()
-
-def clearBrick(brick, x, y):
-    global np
-    for i in range(0,4):
-        a=x+brick[i][0]
-        b=y+brick[i][1]
-        if (a<10 and b<15):
-            helper.setPixel(a,b,(0,0,0))
-    helper.np.write()
-
-def setBrick(brick,col, x,y):
-    global feld
-    for i in range(0,4):
-        a = brick[i][0]+x
-        b = brick[i][1]+y
-        if (b>14):
-            return False
-        feld[a][b]=col
-    return True
-
-
-def canMove(brick, x, y, dx, dy):
-    global feld
-    for i in range(0,4):
-        a = brick[i][0]+x+dx
-        b = brick[i][1]+y+dy
-        if (a<0 or a>9 or b<0):
-            return False
-        if (b<15 and feld[a][b]!=-1):
-            return False
-    return True
-
-def canTurn(brick, x, y, angle):
-    global feld
-    turned = rotate(brick)
-    for i in range(0,4):
-        a = turned[i][0]+x
-        b = turned[i][1]+y
-        if (a<0 or a>9 or b<0):
-            return False
-        if (b<15 and feld[a][b]!=-1):
-            return False
-    return True   
-
-def checkLines():
-    global feld,helper
-    blink=[]
-    for y in range(0,15):
-        full = True
-        for x in range(0,10):
-            if feld[x][y]==-1:
-                full = False
-                break
-        if full:
-            blink.append(y)
-    if len(blink)>0:
-        for i in range(0,13):
-            for y in blink:
-                for x in range(0,10):
-                    helper.setPixel(x,y, ((0,0,0) if i%2==0 else colors[feld[x][y]]))
-            helper.np.write()
-            time.sleep_ms(50)
-        blink.reverse()
-        for y in blink:
-            for yy in (range(y,15)):
-                for x in range(0,10):
-                    feld[x][yy] = feld[x][yy+1] if (yy+1<15) else -1
-                    helper.setPixel(x,yy, (colors[feld[x][yy]] if feld[x][yy]!=-1 else (0,0,0)))
-            helper.np.write()
-            time.sleep_ms(100);
-            
-            
-
-curbrick=-1  # no current brick
-shape=None
-bx=-1  # Coordinates of brick
-by=-1  #
-
-dropTime = 1000
-nextDrop=time.ticks_ms()+dropTime
-buttonRepe=300
-buttonRepeFast=100
-waitButtons = 0
-lastButton = 0
-
-while True:
-    #print("now: "+str(time.ticks_ms())+"  next:"+str(nextDrop))
-    if (curbrick==-1):
-        curbrick=random.randint(0,len(bricks)-1)
-        shape = bricks[curbrick]
-        bx=4;
-        by=14;    
-        showBrick(shape, curbrick, bx,by);
-        nextDrop=time.ticks_ms()+dropTime
-    if (time.ticks_ms()>nextDrop):
-        if canMove(shape,bx,by,0,-1):
-            clearBrick(shape,bx,by)
-            by-=1
-            showBrick(shape,curbrick, bx, by)
-            nextDrop = time.ticks_ms()+dropTime
-        else:
-            if not setBrick(shape,curbrick,bx,by):
-                while True:
-                    lt.animateString(random.randint(0,9),"GAME OVER",(100+random.randint(0,155),random.randint(0,255),100+random.randint(0,155)), 100, callback=ledcyclefun)
-            checkLines()
-            curbrick=random.randint(0,len(bricks)-1)
-            shape = bricks[curbrick]
-            bx=4;
-            by=14;    
-            showBrick(shape, curbrick, bx,by);
-            nextDrop=time.ticks_ms()+dropTime
-    b = helper.getButtons() ^ 255 # Invert buttons
-    helper.setLeds(b)
-    if (b==0):
-        waitButtons=0
-        lastButton=0
-    if ((b&10!=0) and (lastButton!=b or waitButtons<time.ticks_ms())): #right or left
-        if lastButton==b:
-            waitButtons=time.ticks_ms()+buttonRepeFast
-        else:
-            waitButtons=time.ticks_ms()+buttonRepe
-        lastButton=b
-        d = 1 if b&8!=0 else -1
-        if canMove(shape,bx,by,d,0):
-            clearBrick(shape,bx,by)
-            bx+=d
-            showBrick(shape,curbrick, bx, by)
-    if (b&4!=0 and (lastButton!=b or waitButtons<time.ticks_ms())): # rotate
-        if lastButton==b:
-            waitButtons=time.ticks_ms()+buttonRepeFast
-        else:
-            waitButtons=time.ticks_ms()+buttonRepe        
-        lastButton=b
-        angle = -1 
-        if canTurn(shape,bx,by,angle):
-            clearBrick(shape,bx,by)
-            shape = rotate(shape,angle)
-            showBrick(shape,curbrick, bx, by)
-    if (b&1!=0 and (lastButton!=b or waitButtons<time.ticks_ms())): # drop
-        if lastButton==b:
-            waitButtons=time.ticks_ms()+buttonRepeFast
-        else:
-            waitButtons=time.ticks_ms()+buttonRepe
-        lastButton=b     
-        nextDrop = time.ticks_ms()-1
+class Tetris:
+    
+    def __init__(self,np,buttons):
+        self.np = np
+        self.buttons = buttons
+        self.colors = [(255,0,0), (0,255,0), (0,0,255), (255,255,0), (255,0,255), (0,255,255),(255,255,255)]
+        self.bricks = list(map(lambda x:list(map(lambda y: [y%4,y//4],x)), [(0,1,2,3),(0,1,2,5), (0,1,4,5), (0,1,5,6), (4,5,1,2), (0,1,2,6), (4,0,1,2)]))
+        self.feld = [[-1 for i in range(0,15)] for j in range(0,10)]
+        ledcycle={'v':0}
+        this = self
+        def ledcyclefun():
+            this.buttons.setLeds(1 << ledcycle['v'])
+            ledcycle['v']=(ledcycle['v']+1)%8
+        self.ledcyclefun=ledcyclefun
+        self.letters = letters.Letters(np)
+        self.reset()
+#        self.startAnim()
         
+
+    def setPixel(self,x,y,what):
+        x=9-x
+        if x%2==1:
+            y=14-y
+        self.np[x*15+y] = what
+    
+    def reset(self):
+        for y in range(0,15):
+            for x in range(0,10):
+                self.feld[x][y]=-1
+        for i in range(0,150):
+            self.np[i]=(0,0,0);
+        self.np.write()
+                
+    def startAnim(self):
+        self.letters.animateString(4,"TETRIS TABLE",(100,255,100), 100, callback=self.ledcyclefun)
+
+
+    def rotate(self,brick, angle=1):
+        res = [[0,0] for i in range(0,4)]
+        xmin = 100
+        ymin = 100
+        for i in range(0,4):
+            res[i][0] = brick[i][1]*angle
+            res[i][1] = -brick[i][0]*angle
+            if (res[i][0]<xmin):
+                xmin=res[i][0]
+            if (res[i][1]<ymin):
+                ymin = res[i][1]
+        for i in range(0,4):
+            res[i][0]-=xmin
+            res[i][1]-=ymin    
+        return res
+
+
+    def showBrick(self,brick, col, x, y):
+        for i in range(0,4):
+            a=x+brick[i][0]
+            b=y+brick[i][1]
+            if (a<10 and b<15):
+                self.setPixel(a,b,self.colors[col])
+        self.np.write()
+
+    def clearBrick(self,brick, x, y):
+        for i in range(0,4):
+            a=x+brick[i][0]
+            b=y+brick[i][1]
+            if (a<10 and b<15):
+                self.setPixel(a,b,(0,0,0))
+        self.np.write()
+    
+    def setBrick(self,brick,col, x,y):
+        for i in range(0,4):
+            a = brick[i][0]+x
+            b = brick[i][1]+y
+            if (b>14):
+                return False
+            self.feld[a][b]=col
+        return True
+
+    def canMove(self, brick, x, y, dx, dy):
+        for i in range(0,4):
+            a = brick[i][0]+x+dx
+            b = brick[i][1]+y+dy
+            if (a<0 or a>9 or b<0):
+                return False
+            if (b<15 and self.feld[a][b]!=-1):
+                return False
+        return True
+
+    def canTurn(self,brick, x, y, angle):
+        turned = self.rotate(brick)
+        for i in range(0,4):
+            a = turned[i][0]+x
+            b = turned[i][1]+y
+            if (a<0 or a>9 or b<0):
+                return False
+            if (b<15 and self.feld[a][b]!=-1):
+                return False
+        return True   
+
+    def checkLines(self):
+        blink=[]
+        for y in range(0,15):
+            full = True
+            for x in range(0,10):
+                if self.feld[x][y]==-1:
+                    full = False
+                    break
+            if full:
+                blink.append(y)
+        if len(blink)>0:
+            for i in range(0,13):
+                for y in blink:
+                    for x in range(0,10):
+                        self.setPixel(x,y, ((0,0,0) if i%2==0 else self.colors[self.feld[x][y]]))
+                self.np.write()
+                time.sleep_ms(50)
+            blink.reverse()
+            for y in blink:
+                for yy in (range(y,15)):
+                    for x in range(0,10):
+                        self.feld[x][yy] = self.feld[x][yy+1] if (yy+1<15) else -1
+                        self.setPixel(x,yy, (self.colors[self.feld[x][yy]] if self.feld[x][yy]!=-1 else (0,0,0)))
+                self.np.write()
+                time.sleep_ms(100);
+        return len(blink)
+                
+    def play(self):
+        self.reset()
+        curbrick=-1  # no current brick
+        shape=None
+        bx=-1  # Coordinates of brick
+        by=-1  #
+        
+        dropTime = 1500
+        nextDrop=time.ticks_ms()+dropTime
+        buttonRepe=300
+        buttonRepeFast=100
+        waitButtons = 0
+        lastButton = 0
+        debounce = 0
+        
+        points = 0
+        reward = (1,5,20,100,500)
+        
+        while True:
+            # print("now: "+str(time.ticks_ms())+"  next:"+str(nextDrop))
+            if (curbrick==-1):
+                curbrick=random.randint(0,len(self.bricks)-1)
+                shape = self.bricks[curbrick]
+                bx=4;
+                by=14;    
+                self.showBrick(shape, curbrick, bx,by);
+                nextDrop=time.ticks_ms()+dropTime
+            if (time.ticks_ms()>nextDrop):
+                if self.canMove(shape,bx,by,0,-1):
+                    self.clearBrick(shape,bx,by)
+                    by-=1
+                    self.showBrick(shape,curbrick, bx, by)
+                    nextDrop = time.ticks_ms()+dropTime
+                else:
+                    if not self.setBrick(shape,curbrick,bx,by):
+                        for i in (9,6,3,0):
+                            self.letters.animateString(i,str(points),(100+random.randint(0,155),random.randint(0,255),100+random.randint(0,155)), 100, callback=self.ledcyclefun)
+                        self.buttons.setLeds(0)
+                        return
+                    points+=reward[self.checkLines()]
+                    curbrick=random.randint(0,len(self.bricks)-1)
+                    shape = self.bricks[curbrick]
+                    bx=4;
+                    by=14;    
+                    self.showBrick(shape, curbrick, bx,by);
+                    if dropTime>100:
+                        dropTime-=10
+                    nextDrop=time.ticks_ms()+dropTime
+            b = self.buttons.getButtons() ^ 255 # Invert buttons
+            self.buttons.setLeds(b)
+            if (b==0 and debounce<time.ticks_ms()):
+                waitButtons=0
+                debounce = time.ticks_ms()+5
+                lastButton=0
+            if ((b&5!=0) and (lastButton!=b or waitButtons<time.ticks_ms())): #right or left
+                if lastButton==b:
+                    waitButtons=time.ticks_ms()+buttonRepeFast
+                else:
+                    waitButtons=time.ticks_ms()+buttonRepe
+                debounce = time.ticks_ms()+5
+                lastButton=b
+                d = 1 if b&1!=0 else -1
+                if self.canMove(shape,bx,by,d,0):
+                    self.clearBrick(shape,bx,by)
+                    bx+=d
+                    self.showBrick(shape,curbrick, bx, by)
+            if (b&2!=0 and (lastButton!=b or waitButtons<time.ticks_ms())): # rotate
+                if lastButton==b:
+                    waitButtons=time.ticks_ms()+buttonRepeFast
+                else:
+                    waitButtons=time.ticks_ms()+buttonRepe        
+                lastButton=b
+                debounce = time.ticks_ms()+5
+                angle = -1 
+                if self.canTurn(shape,bx,by,angle):
+                    self.clearBrick(shape,bx,by)
+                    shape = self.rotate(shape,angle)
+                    self.showBrick(shape,curbrick, bx, by)
+            if (b&8!=0 and (lastButton!=b or waitButtons<time.ticks_ms())): # drop
+                if lastButton==b:
+                    waitButtons=time.ticks_ms()+buttonRepeFast
+                else:
+                    waitButtons=time.ticks_ms()+buttonRepe
+                lastButton=b     
+                nextDrop = time.ticks_ms()-1
+                debounce = time.ticks_ms()+5
+                
+                
