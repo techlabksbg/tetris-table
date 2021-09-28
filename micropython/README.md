@@ -12,3 +12,4 @@ This is just a dump of files, mosterly work in progress. It desperately needs cl
 
     for a in *.py; do echo "uploading $a"; ampy -p /dev/ttyUSB0 put $a; echo "$a is done"; done
 
+

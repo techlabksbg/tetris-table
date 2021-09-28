@@ -59,14 +59,14 @@ def showmenu():
                 helper.setPixel(x,y,c)
                 
         helper.np.write()
-        b=helper.getButtons() ^ 255
+        b = helper.getButtons() ^ 255
         bold = b
         
         if b!=0:
             while b!=0:  # Warten bis losgelassen
                 bold = b
                 b = helper.getButtons()^255
-                helper.setLeds(b^255)
+                helper.setLeds(b)
             return bold
         
 
@@ -87,6 +87,7 @@ def runprog(b):
 
 while True:
     b = showmenu()
+    print("b=%d" % b)
     runprog(b)
 
             

@@ -15,8 +15,9 @@ class MCP:
             i = keys.index(k)
             print(str(k)+" -> "+str(i))
             if (i>=0 and i<8):
-                print (1<<i) ^ 255
-                return (1<<i) ^ 255
+                r = (1<<i) ^ 255
+                print "Returning %d" % r 
+                return r
         except:
             return 255
 
