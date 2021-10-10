@@ -21,7 +21,7 @@ class TetrisTable {
 
     /**
      * Sets a pixel without showing it
-     * You can computer color values with the color-function
+     * You can compute color values with the color-function
      */
     void setPixel(int x, int y, uint32_t color);
     /**
