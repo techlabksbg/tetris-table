@@ -20,3 +20,10 @@ This is just a dump of files, mosterly work in progress. It desperately needs cl
 
    curl -F "file=@main.py" http://192.168.1.181 
 
+
+# IDEs
+I currently use vim to edit code, and ampy to upload it (or the web-uploader with curl). You may try the following:
+ - https://lemariva.com/blog/2018/12/micropython-visual-studio-code-as-ide
+ - https://randomnerdtutorials.com/getting-started-thonny-micropython-python-ide-esp32-esp8266/
+ - https://blog.jetbrains.com/pycharm/2018/01/micropython-plugin-for-pycharm/
+
