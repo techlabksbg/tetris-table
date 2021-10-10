@@ -6,17 +6,18 @@ np = neopixel.NeoPixel(machine.Pin(4), 150)
 np.write()
 
 import mcp
+from config import Config
 import random
 import math
 
-buttons = mcp.MCP(0x20, np)
+buttons = mcp.MCP(Config.mcp_addr, np)
 buttons.setLeds(0)
 
 from tetris import Tetris
 from letters import Letters
 from light import light
 from fire import Fire
-
+from webserver import Webserver
 
 def setPixel(x,y,what):
     x=9-x
@@ -93,7 +94,9 @@ def runprog(b):
     elif b&2==2:
         print("Fire")
         Fire(np,buttons).play()
-
+    elif b&128==128:
+        print("Webserver")
+        Fire(np,buttons).play()
 
 while True:
     b = showmenu()
