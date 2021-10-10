@@ -76,7 +76,7 @@ class BareServer:
         answer += "<h1>Upload</h1><form method='post' enctype='multipart/form-data'><input type='file' id='myfile' name='myfile'><input type='submit'></form>"
         answer += "<h1>Files</h1><ul>\n"
         for f in os.listdir():
-            answer += "<li><a href=\""+f+"\">"+f+"</a></li>\n"
+            answer += "<li><a href=\""+f+"\">"+f+"</a> &nbsp; &nbsp <a href='/delete/"+f+"'>DELETE</a></li>\n"
         answer += "</ul></body></html>\n"
         return self.responseOK(answer)
 
@@ -90,6 +90,12 @@ class BareServer:
 
     def get(self,url):        
         if url=="/":
+            return self.indexpage()
+        if url[0:8]=="/delete/":
+            filename = url[8:]
+            if self.exists(filename):
+                os.remove(filename)
+                return self.indexpage("<h1>File "+filename+" deleted</h1>Und es war nicht mehr da...")
             return self.indexpage()
         filename = url[1:]
         print("Trying "+filename)
