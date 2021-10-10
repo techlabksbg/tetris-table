@@ -13,10 +13,16 @@ class BareServer:
         return bytearray("<!DOCTYPE html>\n<html><body><h1>Hi</h1></body></html>\n".encode())
 
     def parseRequest(self, conn):
-        request = conn.recv(4096).decode()
+        while True:
+            request = conn.recv(4096).decode()
+            if len(request)>0:
+                break
+            print("Empty request so far...")
+            conn.close()
+            return ""
         # print(request)
         lines = request.split("\r\n")
-        # print(lines)
+        print(lines)
         method,url,http = lines[0].split(" ")
         header = []
         body = ""
@@ -26,7 +32,7 @@ class BareServer:
             # print("->"+l+"<-")
             if l=="":
                 # print(lines[(i+1):])
-                body = "".join(lines[(i+1):])
+                body = "\r\n".join(lines[(i+2):])
                 # print(body)
                 break
             parts = l.split(": ",1)
@@ -34,7 +40,7 @@ class BareServer:
                 clen = int(parts[1])
             header.append([parts[0], parts[1]])
             i+=1
-        # print("clen=%d, bodylen=%d" %(clen, len(body)))
+        print("clen=%d, bodylen=%d" %(clen, len(body)))
         while len(body)<clen:
             body+=conn.recv(4096).decode()
             # print("bodylen now = %d" % len(body))
@@ -74,13 +80,20 @@ class BareServer:
         answer += "</ul></body></html>\n"
         return self.responseOK(answer)
 
+    def exists(self, path):
+        try:
+            os.stat(path)
+            return True
+        except OSError as e:
+            pass
+        return False
 
     def get(self,url):        
         if url=="/":
             return self.indexpage()
         filename = url[1:]
         print("Trying "+filename)
-        if os.path.exists(filename):
+        if self.exists(filename):
             with open(filename) as f:
                 contents = f.readlines()
             return self.responseOK("".join(contents), False)
@@ -89,27 +102,28 @@ class BareServer:
 
     def post(self, url, header, body):
         head = body.split("\r\n", 4)
+        # print(head)
         sep = head[0]
+        print(sep)
+        print(head[1])
         fcontents = head[4].split("\r\n"+sep)[0]
+        print(head[1].split("filename="))
         filename = head[1].split("filename=")[1][1:-1]
+        print("Write to filename "+filename)
         with open(filename, "w") as f:
             f.write(fcontents)
-        print(fcontents)
+        # print(fcontents)
         # return self.responseOK(fcontents, False)
         return self.indexpage("<h1>File "+filename+" written</h1>"+str(len(fcontents))+" Bytes written")
 
     def serve(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        s.bind(('', 8080))
+        s.bind(('', 80))
         s.listen(5)
         while True:
             conn, addr = s.accept()
-            #print('Got a connection from %s' % str(addr))
-            #request = conn.recv(4096)
-            #print(request)
-            #print("** len = %d **\n" % len(request))
-            #request = request.decode()
+            print('Got a connection from %s' % str(addr))
             method, url, header,body = (self.parseRequest(conn))
             if method=="GET":
                 if url=="/quit":
@@ -121,7 +135,9 @@ class BareServer:
                 response = self.post(url, header, body)
             else:
                 response = self.responseERROR(404,"Method "+method+" not implemented")
-            conn.sendall(response)
+            if len(response)>0:
+                conn.sendall(response)
+            print("Connection closed")
             conn.close()
 
 

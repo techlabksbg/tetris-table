@@ -8,7 +8,7 @@ class RGB_Bitmap:
         x=9-x
         if x%2==1:
             y=14-y
-        np[x*15+y] = what
+        np[x*15+y] = (what & 255, (what>>8) & 255, (what>>16)&255)
 
     def draw(self, np, atx, aty):
         for x in range(self.x):
@@ -32,13 +32,13 @@ class BW_Bitmap:
             y=14-y
         np[x*15+y] = what
 
-    def draw(self, np, atx, aty, fgcolor, bgcolor):
+    def draw(self, np, atx, aty, fgcolor, bgcolor=None):
         for x in range(self.x):
             for y in range(self.y):
-                a = a+atx
-                b = b+aty
+                a = x+atx
+                b = y+aty
                 if (a>=0 and a<10 and b>=0 and b<15):
-                    pixel = (self.lines[y] >> x) & 1
+                    pixel = (self.l[self.y-y-1] >> x) & 1
                     if pixel==1 and fgcolor!=None:
                         self.setPixel(np, a,b, fgcolor)
                     if pixel==0 and bgcolor!=None:

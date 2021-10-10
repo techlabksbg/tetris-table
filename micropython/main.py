@@ -17,7 +17,7 @@ from tetris import Tetris
 from letters import Letters
 from light import light
 from fire import Fire
-from webserver import Webserver
+from webserver import WebServer
 
 def setPixel(x,y,what):
     x=9-x
@@ -96,7 +96,7 @@ def runprog(b):
         Fire(np,buttons).play()
     elif b&128==128:
         print("Webserver")
-        Fire(np,buttons).play()
+        WebServer(np,buttons).play()
 
 while True:
     b = showmenu()
