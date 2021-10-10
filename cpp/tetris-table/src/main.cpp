@@ -1,13 +1,16 @@
 #include <Arduino.h>
 
 #include "tetristable.h"
+#include "colorspotlight.h"
 
 TetrisTable t;
 
 void setup() {
   Serial.begin(115200);
   t.begin();
+  colorSpotlightDemo();
 }
+
 
 void loop() {
   unsigned long start = millis();
