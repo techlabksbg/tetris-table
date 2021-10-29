@@ -34,7 +34,8 @@ for y in range(sy):
         if rgb:
             res += "0x%x,"%c
         else:
-            l |= (1 if c==0 else 0) << x
+            bright = c & 255 + (c>>8)&255 + (c>>16)&255
+            l |= (1 if bright<100 else 0) << x
     if not rgb:
         res += bin(l)+","
 
