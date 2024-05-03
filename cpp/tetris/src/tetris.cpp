@@ -24,6 +24,17 @@ void Tetris::reset() {
     }
 }
 
+
+void Tetris::begin() {
+    for (int x=9; x>-20;x--) {
+        t->paintString(x,5,"Tetris", 0xff5500);
+        t->show();
+        delay(200);
+    }
+    reset();
+
+}
+
 void Tetris::newblock() {
     blockNumber = random(7);
     for (int i=0; i<4; i++) {

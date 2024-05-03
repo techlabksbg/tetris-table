@@ -13,6 +13,7 @@ void setup() {
   t.pixels->clear();
   t.show();
   tetris = new Tetris(&t);
+  tetris->begin();
 }
 
 
