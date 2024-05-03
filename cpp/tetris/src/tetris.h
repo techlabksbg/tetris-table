@@ -17,7 +17,9 @@ class Tetris {
         unsigned long lastFall = 0;
         unsigned long fallTime = 350;
         int keyRepeat=200;
-        int lineAnimation = 0;
+        unsigned long nextAnimation = 0;
+        int animationCount;
+        int animatedLines[4] = {-1,-1,-1,-1};
         TetrisTable *t;
 
     void reset();

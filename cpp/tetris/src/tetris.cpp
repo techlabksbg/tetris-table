@@ -17,7 +17,8 @@ void Tetris::reset() {
     newblock();
     setblock(false);
     lastFall = millis();
-    lineAnimation = 0;
+    nextAnimation = 0;
+    for (int i=0; i<4; i++) animatedLines[i]=-1;
     for (int i=0; i<4; i++) {
         lastPress[i] = 0;
     }
@@ -103,11 +104,83 @@ void Tetris::rotate(int dir) {
 //   0  all done
 //   1  animation going
 int Tetris::checklines() {
+    if (nextAnimation>0) {
+       if (millis()>nextAnimation) {
+            if (animationCount<11) { 
+                nextAnimation+=100;
+                for (int i=0; i<4; i++) {
+                    if (animatedLines[i]>=0) {
+                        for (int x=0; x<10; x++) {
+                            uint32_t color = 0;
+                            if (feld[x][animatedLines[i]]>0) {
+                                color = colors[feld[x][animatedLines[i]]-1];
+                            }
+                            t->setPixel(x,animatedLines[i], color);
+                        }
+                    }
+                }
+                animationCount+=1;
+                if (animationCount>10) {
+                    for (int i=0; i<4; i++) {
+                        if (animatedLines[i]>=0) {
+                            for (int x=0; x<10; x++) {
+                                feld[x][animatedLines[i]] = 0;
+                            }
+                        }
+                    }
+                }
+                return 1;
+            }
 
+            for (int i=0; i<4; i++) {
+                if (animatedLines[i]>0) {
+                    for (int x=0; x<10; x++) {
+                        for (int y=animatedLines[i]; y<15; y++) {
+                            feld[x][y]=(y!=14) ? feld[x][y+1] : 0;
+                            uint32_t color = 0; 
+                            if (feld[x][y]>0) {
+                                color = colors[feld[x][y]-1];
+                            }
+                            t->setPixel(x,y,color);
+                        }
+                    }
+                    animatedLines[i]=-1;
+                    nextAnimation = millis()+50;
+                    t->show();
+                    return 1;
+                }
+            }
+            // Animation has finished
+            nextAnimation = 0;
+            return 0;
+       }
+    } else {
+        int cleared = 0;
+        for (int y=0; y<15; y++) {
+            int full = 0;
+            for (int x=0; x<10; x++) {
+                if (feld[x][y]>0) {
+                    full++;
+                }
+            }
+            if (full==10) {
+                animatedLines[cleared++]=y;
+            }
+        }
+        if (cleared>0) { // start animation
+            nextAnimation=millis();   
+            animationCount=0;
+            return 1;
+        }
+    }
     return 0;
 }
 
 int Tetris::loop() {
+    if (nextAnimation>0) {
+        checklines();
+        return 0;
+    }
     int status = 0;
     auto b = t->getButtons();
     auto now = millis();
@@ -188,13 +261,14 @@ bool Tetris::down() {
                 return false;
             }
             feld[block[i][0]][block[i][1]] = 1+blockNumber;
-
         }
-        newblock();
-        if (testblock()) {
-            setblock(false);
-        } else {
-            return false;
+        if (checklines()==0) {
+            newblock();
+            if (testblock()) {
+                setblock(false);
+            } else {
+                return false;
+            }
         }
     }
     return true;
