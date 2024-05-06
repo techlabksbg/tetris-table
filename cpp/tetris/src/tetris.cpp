@@ -27,9 +27,10 @@ void Tetris::reset() {
 
 void Tetris::begin() {
     for (int x=9; x>-20;x--) {
-        t->paintString(x,5,"Tetris", 0xff5500);
+        t->paintString(x, 5, "TETRIS", 0xff5500, 0);
         t->show();
-        delay(200);
+        delay(100);
+        if (t->getButtons()) break;
     }
     reset();
 
@@ -100,6 +101,7 @@ void Tetris::rotate(int dir) {
         setblock();
         return;
     }
+    Serial.printf("mmx=%d\n", mmx);
     if (mmx>9) {
          for (int i=0; i<4; i++) {
             neublock[i][0] -= mmx-9;
@@ -121,9 +123,10 @@ int Tetris::checklines() {
                 nextAnimation+=100;
                 for (int i=0; i<4; i++) {
                     if (animatedLines[i]>=0) {
+                        Serial.printf("Flashing at count=%d\n", animationCount);
                         for (int x=0; x<10; x++) {
                             uint32_t color = 0;
-                            if (feld[x][animatedLines[i]]>0) {
+                            if (feld[x][animatedLines[i]]>0 && animationCount%2==0) {
                                 color = colors[feld[x][animatedLines[i]]-1];
                             }
                             t->setPixel(x,animatedLines[i], color);
@@ -136,15 +139,18 @@ int Tetris::checklines() {
                         if (animatedLines[i]>=0) {
                             for (int x=0; x<10; x++) {
                                 feld[x][animatedLines[i]] = 0;
+                                t->setPixel(x,animatedLines[i], 0);
                             }
                         }
                     }
                 }
+                t->show();
                 return 1;
             }
 
             for (int i=0; i<4; i++) {
-                if (animatedLines[i]>0) {
+                if (animatedLines[i]>=0) {
+                    Serial.printf("Clearing line %d\n",animatedLines[i]);
                     for (int x=0; x<10; x++) {
                         for (int y=animatedLines[i]; y<15; y++) {
                             feld[x][y]=(y!=14) ? feld[x][y+1] : 0;
@@ -154,15 +160,35 @@ int Tetris::checklines() {
                             }
                             t->setPixel(x,y,color);
                         }
+                        t->show();
+                        delay(50);
                     }
                     animatedLines[i]=-1;
-                    nextAnimation = millis()+50;
+                    nextAnimation = millis()+500;
+                    for (int j=i+1; j<4; j++) if (animatedLines[j]>0) animatedLines[j]--;
                     t->show();
                     return 1;
                 }
             }
             // Animation has finished
+            Serial.println("Animation finished");
+            for (int y=14; y>=0; y--) {
+                for (int x=0; x<10; x++) {
+                    uint32_t color = 0;
+                    Serial.printf("%d ",feld[x][y]);
+                    if (feld[x][y]>0) {
+                        color = colors[feld[x][y]-1];
+                    }
+                    t->setPixel(x,y,color);
+                }
+                Serial.println();
+            }
+            t->show();
+            delay(1000);
+            animationCount = 0;
             nextAnimation = 0;
+            newblock();
+            setblock(false);
             return 0;
        }
     } else {
@@ -176,9 +202,11 @@ int Tetris::checklines() {
             }
             if (full==10) {
                 animatedLines[cleared++]=y;
+                Serial.printf("Line to clear: %d\n", y);
             }
         }
         if (cleared>0) { // start animation
+            Serial.println("Starting animation");
             nextAnimation=millis();   
             animationCount=0;
             return 1;
@@ -201,6 +229,7 @@ int Tetris::loop() {
             if (lastPress[i]==0 || (now-lastPress[i])>keyRepeat) {
                 lastPress[i] = now;
                 pressed[i] = true;
+                Serial.printf("[%d] with b=%d\n", i,b);
             }
         } else {
             lastPress[i] = 0;
@@ -213,20 +242,22 @@ int Tetris::loop() {
         }
         lastFall = millis();
     } */
-    if (pressed[3]) {
+    if (pressed[2]) {
         move(-1);
         //Serial.println("Left");
-    }
-    if (pressed[2]) {
-        rotate(-1);
-        //Serial.println("Rotate");
     }
     if (pressed[1]) {
         rotate(1);
         //Serial.println("Rotate");
     }
     if (pressed[0]) {
+        //rotate(1);
         move(1);
+        //Serial.println("Rotate");
+    }
+    if (pressed[3]) {
+        //move(1);
+        down();
         //Serial.println("Right");
     } 
 
@@ -254,7 +285,7 @@ void Tetris::move(int d) {
     if (testblock()) {
         setblock();
     } else {
-        Serial.println("Move failed");
+        //Serial.println("Move failed");
     }
 
 }
@@ -268,10 +299,11 @@ bool Tetris::down() {
         setblock();
     } else {
         for (int i=0; i<4; i++) {
-            if (block[i][1]>14) {
+            if (block[i][1]<=14) {
+                feld[block[i][0]][block[i][1]] = 1+blockNumber;
+            } else {
                 return false;
             }
-            feld[block[i][0]][block[i][1]] = 1+blockNumber;
         }
         if (checklines()==0) {
             newblock();

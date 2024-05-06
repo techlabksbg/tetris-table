@@ -54,7 +54,7 @@ class TetrisTable {
 
     // Paint ASCII-character
     void paintChar(int x, int y, char c, uint32_t color, int bg_color=-1);
-    void paintString(int x, int y, char *s, uint32_t color, int bg_color=-1);
+    void paintString(int x, int y, const char *s, uint32_t color, int bg_color=-1);
 
     private:
     uint8_t ledState = 0;

@@ -8,7 +8,7 @@ uint32_t letterBitMaps[] = {31599, 31599, 31599, 31599, 31599, 31599, 31599, 315
 void TetrisTable::paintChar(int x, int y, char c, uint32_t color, int bg_color) {
     for (int j=0; j<18; j++) {
         int a = x+j%3;
-        int b = y+5-j/5;
+        int b = y+5-j/3;
         if (letterBitMaps[c] & (1<<j)) {
             setPixel(a,b,color);
         } else if (bg_color>=0) {
@@ -20,7 +20,7 @@ void TetrisTable::paintChar(int x, int y, char c, uint32_t color, int bg_color) 
     }
 }
 
-void TetrisTable::paintString(int x, int y, char *s, uint32_t color, int bg_color) {
+void TetrisTable::paintString(int x, int y, const char *s, uint32_t color, int bg_color) {
     while (*s && x<10) {
         if (x>-4) paintChar(x,y,*s,color,bg_color);
         x+=4;
